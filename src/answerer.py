@@ -8,7 +8,7 @@ openai.api_key = os.environ.get("OPENAI_API_KEY")
 class Answerer(BaseAssistant):
     def __init__(self, resources_path):
         super().__init__(resources_path)
-        self.answerer_assistant = self.client.beta.assistant.create(
+        self.answerer_assistant = self.client.beta.assistants.create(
             name="Answerer",
             instructions="You are an Answerer. Your job is to refer to the input resources and provide answers to the corresponding questions. You can use the retrieval to help you with this task. The response provided should be a list of answer. Do Not Add questions to the output. Only provide the answers.",
             tools=[{"type": "retrieval"}],

@@ -16,9 +16,14 @@ class BaseAssistant:
             if filename.endswith(".pdf"):
                 # Upload a file with an "assistants" purpose
                 file = self.client.files.create(  # not sure if this'll work. maybe overwriting the file is fine but idk yet.
-                    file=open(filename, "rb"), purpose="assistants"
+                    file=open(os.path.join(resources_path, filename), "rb"),
+                    purpose="assistants",
                 )
                 file_ids.append(file.id)
+
+        if not file_ids:
+            raise ValueError(f"No file found in `{resources_path}`")
+
         return file_ids
 
 

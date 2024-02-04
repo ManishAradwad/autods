@@ -33,8 +33,6 @@ To run the unit tests, navigate to the `tests` directory and run the following c
 python -m unittest
 ```
 
-This will run all the test cases defined in the `test_questioner.py`, `test_answerer.py`, and `test_manager.py` files.
-
 ## Contributing
 
 Contributions are welcome. Please submit a pull request with your changes.
