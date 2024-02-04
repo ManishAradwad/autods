@@ -4,10 +4,13 @@ import jsonlines
 
 
 class BaseAssistant:
+    file_ids = None
+
     def __init__(self, resources_path):
         self.resources_path = resources_path
         self.client = openai.Client()
-        self.file_ids = self.get_file_ids(self.resources_path)
+        if BaseAssistant.file_ids is None:
+            BaseAssistant.file_ids = self.get_file_ids(self.resources_path)
 
     def get_file_ids(self, resources_path):
         file_ids = []
@@ -24,6 +27,7 @@ class BaseAssistant:
         if not file_ids:
             raise ValueError(f"No file found in `{resources_path}`")
 
+        print("Files uploaded successfully")
         return file_ids
 
 

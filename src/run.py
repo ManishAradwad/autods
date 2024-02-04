@@ -4,9 +4,9 @@ import os
 
 if __name__ == "__main__":
     openai.api_key = os.environ.get("OPENAI_API_KEY")
-    prompt = input(
-        "Enter the prompt for the dataset you want to generate. Ex. Generate a dataset for QnA based on football."
-    )
+    prompt = "Generate a dataset for football"  # input(
+    #     "Enter the prompt for the dataset you want to generate. Ex. Generate a dataset for QnA based on football:\n"
+    # )
     resources_path = "resources"
     manager = Manager(resources_path, prompt)
     output_file, status = manager.generate_dataset()

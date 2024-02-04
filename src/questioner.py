@@ -12,7 +12,7 @@ class Questioner(BaseAssistant):
             instructions="You are a Questioner. Your job is to refer to the resources provided and create questions to be added in the dataset. You can use the retrieval to help you with this task. The response provided should be a list of questions.",
             tools=[{"type": "retrieval"}],
             model="gpt-3.5-turbo-1106",
-            file_ids=self.file_ids,
+            file_ids=BaseAssistant.file_ids,
         )
 
     def trigger_assistant(self, thread_id):
@@ -22,22 +22,33 @@ class Questioner(BaseAssistant):
         )
 
     def generate_questions(self, topic):
-        thread = self.client.beta.threads.create()
-        message = self.client.beta.threads.messages.create(
-            thread_id=thread.id,
-            role="user",
-            content=f"Generate questions based on the topic: {topic}.",  # the prompt might need some work
-            file_ids=self.file_ids,
+        thread = self.client.beta.threads.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"Generate questions based on the topic: {topic}. The output should be a list of questions. For ex. ['What is the capital of France?', 'What is the capital of Spain?'] is an example of the output.",
+                }
+            ]
         )
-        self.trigger_assistant(thread.id)
+        # message = self.client.beta.threads.messages.create(
+        #     thread_id=thread.id,
+        #     role="user",
+        #     content=f"Generate questions based on the topic: {topic}.",  # the prompt might need some work
+        #     file_ids=BaseAssistant.file_ids,
+        # )
+        # self.trigger_assistant(thread.id)
+        run = self.client.beta.threads.runs.create(
+            thread_id=thread.id,
+            assistant_id=self.questioner_assistant.id,
+        )
 
         # Poll the thread until the assistant's response is available
-        while True:
-            messages = self.client.beta.threads.messages.list(thread_id=thread.id)
+        while run.status != "completed":
+            run = self.client.beta.threads.runs.retrieve(
+                thread_id=thread.id, run_id=run.id
+            )
             print("Generating questions...")
-            if len(messages.data) > 1:  # The assistant's response is available
-                break
-            time.sleep(1)  # Wait for a short period before polling again
+        messages = self.client.beta.threads.messages.list(thread_id=thread.id)
         # this will need some formatting to make it work
         # message = self.client.beta.threads.messages.list(thread_id=thread.id)
         breakpoint()

@@ -17,7 +17,7 @@ class Manager(BaseAssistant):
             instructions="You are a Manager who oversees the creation of a dataset based on the {self.topic}. You are given a list of question-answer pairs. Your job is to refer to the input resources and verify whether the answers are correct for the correspoding questions. You can use the retrieval to help you with this task. The response provided should be a list of 0 and 1 values. The value should be 1 if it's a valid question-answer pair and 0 if it's not. The response should be in the same order as the input questions. For instance, if the input question is 'What is the capital of France?' and the answer is 'Paris', the response should be '1'. If the input question is 'What is the capital of France?' and the answer is 'Spain', the response should be '0'.",
             tools=[{"type": "retrieval"}],
             model="gpt-3.5-turbo-1106",
-            file_ids=self.file_ids,
+            file_ids=BaseAssistant.file_ids,
         )
 
     def extract_topic(self, prompt):
@@ -38,7 +38,7 @@ class Manager(BaseAssistant):
         topic = completion.choices[0].message
         return topic.content
 
-    def generate_dataset(self):
+    def generate_dataset(self, count=1, multiplier=10):
         print("The topic extracted from the given prompt is:", self.topic)
         questions = self.questioner.generate_questions(self.topic)
         answers = self.answerer.generate_answers(questions)
@@ -54,9 +54,9 @@ class Manager(BaseAssistant):
         with jsonlines.open(type_ds, mode="w") as writer:
             writer.write_all(dataset)
 
-        file_deletion_status = True  # self.client.beta.assistants.files.delete(
-        #     assistant_id=self.manager_assistant.id, file_id=self.file_ids
-        # )
+        file_deletion_status = self.client.beta.assistants.files.delete(
+            assistant_id=self.manager_assistant.id, file_id=BaseAssistant.file_ids
+        )
         return type_ds, file_deletion_status
 
     def validate_answers(self, questions, answers):

@@ -13,7 +13,7 @@ class Answerer(BaseAssistant):
             instructions="You are an Answerer. Your job is to refer to the input resources and provide answers to the corresponding questions. You can use the retrieval to help you with this task. The response provided should be a list of answer. Do Not Add questions to the output. Only provide the answers.",
             tools=[{"type": "retrieval"}],
             model="gpt-3.5-turbo-1106",
-            file_ids=self.file_ids,
+            file_ids=BaseAssistant.file_ids,
         )
 
     def generate_answers(self, questions):
