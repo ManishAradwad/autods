@@ -30,6 +30,13 @@ class BaseAssistant:
         print("Files uploaded successfully")
         return file_ids
 
+    def trigger_run(self, thread_id, assistant_id):
+        run = self.client.beta.threads.runs.create(
+            thread_id=thread_id,
+            assistant_id=assistant_id,
+        )
+        return run
+
 
 def save_dataset(dataset, output_file):
     with jsonlines.open(output_file, mode="w") as writer:

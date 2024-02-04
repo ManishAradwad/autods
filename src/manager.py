@@ -40,7 +40,7 @@ class Manager(BaseAssistant):
 
     def generate_dataset(self, count=1, multiplier=10):
         print("The topic extracted from the given prompt is:", self.topic)
-        questions = self.questioner.generate_questions(self.topic)
+        questions = self.questioner.generate_questions(self.topic, count, multiplier)
         answers = self.answerer.generate_answers(questions)
         validated_questions, validated_answers = self.validate_answers(
             questions, answers

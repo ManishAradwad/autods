@@ -27,16 +27,17 @@ The project is structured as follows:
 
 ## Usage
 
-1. Import the `Manager` class from `src/manager.py`.
-2. Create an instance of the `Manager` class.
-3. Call the `generate_dataset` method with your topic and resources as arguments. The method will return a .jsonl file with the generated dataset.
+1. Check the parameter values in `src/run.py`
+```bash
+python3 src/run.py
+```
 
 ## Testing
 
 To run the unit tests, navigate to the `tests` directory and run the following command:
 
 ```bash
-python -m unittest
+python3 -m unittest
 ```
 
 ## Contributing
