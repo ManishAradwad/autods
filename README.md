@@ -2,7 +2,7 @@
 
 This project contains an automated tool for creating datasets for fine-tuning Language Learning Models (LLMs). The tool is inspired by AutoGPT and uses the OpenAI API to generate a Question-Answer dataset on a specific topic provided by the user. You can add files (pdf only for now) in the `resources` folder. These files will be used for dataset creation using Retrieval Augmented Generation.
 
-NOTE: (According to OpenAI)[https://platform.openai.com/docs/assistants/how-it-works/creating-assistants],
+NOTE: [According to OpenAI](https://platform.openai.com/docs/assistants/how-it-works/creating-assistants])
 
 > You can attach a maximum of 20 files per Assistant, and they can be at most 512 MB each. The size of all the files uploaded by your organization should not exceed 100 GB. You can request an increase in this storage limit using our help center. In addition to the 512 MB file size limit, each file can only contain 2,000,000 tokens. Assistant or Message creation will fail if any attached files exceed the token limit.
 
