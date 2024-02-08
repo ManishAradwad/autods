@@ -8,7 +8,8 @@ if __name__ == "__main__":
     #     "Enter the prompt for the dataset you want to generate. Ex. Generate a dataset for QnA based on football:\n"
     # )
     resources_path = "resources"
-    manager = Manager(resources_path, prompt)
+    output_path = "output"
+    manager = Manager(resources_path, output_path, prompt)
     output_file = manager.generate_dataset()
 
     print(f"Dataset generated and saved to {output_file}")

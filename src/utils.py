@@ -6,8 +6,9 @@ import jsonlines
 class BaseAssistant:
     file_ids = None
 
-    def __init__(self, resources_path, model):
+    def __init__(self, resources_path, output_path, model):
         self.resources_path = resources_path
+        self.output_path = output_path
         self.client = openai.Client()
         self.model = model
         if BaseAssistant.file_ids is None:
