@@ -5,13 +5,13 @@ import time
 
 
 class Questioner(BaseAssistant):
-    def __init__(self, resources_path):
-        super().__init__(resources_path)
+    def __init__(self, resources_path, model):
+        super().__init__(resources_path, model)
         self.questioner_assistant = self.client.beta.assistants.create(
             name="Questioner",
             instructions="You are a Questioner. Your job is to refer to the resources provided and create questions to be added in the dataset. You can use the retrieval to help you with this task. The response provided should be a list of questions.",
             tools=[{"type": "retrieval"}],
-            model="gpt-3.5-turbo-1106",
+            model=self.model,
             file_ids=BaseAssistant.file_ids,
         )
 
@@ -34,6 +34,7 @@ class Questioner(BaseAssistant):
                 run = self.client.beta.threads.runs.retrieve(
                     thread_id=thread.id, run_id=run.id
                 )
+                time.sleep(1)
                 print("Generating a question...")
 
             # getting the latest messages from the thread
@@ -44,20 +45,17 @@ class Questioner(BaseAssistant):
 
             # logging
             print("New question added! Total questions:", len(questions))
-            breakpoint()
             _ = self.client.beta.threads.messages.create(
                 thread.id,
                 role="user",
                 content="Please generate a new question. Make sure new question is not similar to the earlier generated questions.",
             )
-
             # triggering the next run to add a new question
             run = self.trigger_run(thread.id, self.questioner_assistant.id)
 
-        # this `messages` will contain all the generated questions
-        messages = self.client.beta.threads.messages.list(thread_id=thread.id)
-        # this will need some formatting to make it work
-        # message = self.client.beta.threads.messages.list(thread_id=thread.id)
-        breakpoint()
+        # deleting the questioner assistant
+        deletion_status = self.client.beta.assistants.delete(
+            assistant_id=self.questioner_assistant.id
+        )
 
-        return messages
+        return questions, deletion_status

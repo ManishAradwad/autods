@@ -9,8 +9,6 @@ if __name__ == "__main__":
     # )
     resources_path = "resources"
     manager = Manager(resources_path, prompt)
-    output_file, status = manager.generate_dataset()
+    output_file = manager.generate_dataset()
 
-    print(
-        f"Dataset generated and saved to {output_file} and file deletion status is {status}"
-    )
+    print(f"Dataset generated and saved to {output_file}")
