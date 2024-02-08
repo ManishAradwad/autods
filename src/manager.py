@@ -78,7 +78,7 @@ class Manager(BaseAssistant):
                     thread_id=thread.id, run_id=run.id
                 )
                 time.sleep(1)
-                print("Validating a QnA paper...")
+                print("Validating a QnA pair...")
 
             # getting the latest messages from the thread
             messages = self.client.beta.threads.messages.list(thread_id=thread.id)
@@ -100,5 +100,10 @@ class Manager(BaseAssistant):
         deletion_status = self.client.beta.assistants.delete(
             assistant_id=self.validater_assistant.id
         )
+
+        # deleting the files
+        for file_id in BaseAssistant.file_ids:
+            self.client.files.delete(file_id)
+        print("Files deleted successfully")
 
         return result, deletion_status
