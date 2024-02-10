@@ -52,7 +52,7 @@ This project is licensed under the MIT License.
 
 More Important:
 
-- [] Improve the validator reply prompt
+- [ ] Improve the validator reply prompt
 - [ ] Validater responses are based on a very loose rule of “if ‘valid’ in response then append 1 else 0”. Try fixing that(not sure how to do this.) 
 
 Less Important:
