@@ -1,6 +1,7 @@
 import os
 import openai
 import jsonlines
+import time
 
 
 class BaseAssistant:
@@ -13,6 +14,17 @@ class BaseAssistant:
         self.model = model
         if BaseAssistant.file_ids is None:
             BaseAssistant.file_ids = self.get_file_ids(self.resources_path)
+
+    def update_list(self, run, client, thread_id, lst):
+        # checking if the current run to add a question has completed
+        while run.status != "completed":
+            run = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run.id)
+            time.sleep(1)
+        # getting the latest messages from the thread
+        messages = client.beta.threads.messages.list(thread_id=thread_id)
+        # adding the answer to the list
+        lst.append(messages.data[0].content[0].text.value)
+        return lst
 
     def get_file_ids(self, resources_path):
         file_ids = []

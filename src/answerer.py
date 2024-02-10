@@ -16,44 +16,39 @@ class Answerer(BaseAssistant):
         )
 
     def generate_answers(self, questions):
-        thread = self.client.beta.threads.create(
-            messages=[
-                {
-                    "role": "user",
-                    "content": f" Answer the question {questions[0]}. The output should be just an answer and nothing else.",
-                }
-            ]
-        )
-        # triggering the first run
-        run = self.trigger_run(thread.id, self.answerer_assistant.id)
+        thread = None
         # this `messages` will contain only the above prompt
         answers = []
 
         print("Answering questions...")
-        for question in tqdm(questions[1:]):
-            # checking if the current run to add a question has completed
-            while run.status != "completed":
-                run = self.client.beta.threads.runs.retrieve(
-                    thread_id=thread.id, run_id=run.id
+        for question in tqdm(questions):
+            if not thread:
+                thread = self.client.beta.threads.create(
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": f" Answer the question {question}. The output should be just an answer and nothing else.",
+                        }
+                    ]
                 )
-                time.sleep(1)
-                # print("Answering a question...")
+                # triggering the first run
+                run = self.trigger_run(thread.id, self.answerer_assistant.id)
+            else:
+                answers = self.update_list(run, self.client, thread.id, answers)
 
-            # getting the latest messages from the thread
-            messages = self.client.beta.threads.messages.list(thread_id=thread.id)
+                # logging
+                # print("New answer added! Total answers:", len(answers))
+                _ = self.client.beta.threads.messages.create(
+                    thread.id,
+                    role="user",
+                    content=f'Answer the question "{question}". The output should be just an answer and nothing else.',
+                )
+                # triggering the next run to add a new answer
+                run = self.trigger_run(thread.id, self.answerer_assistant.id)
 
-            # adding the answer to the list
-            answers.append(messages.data[0].content[0].text.value)
-
-            # logging
-            # print("New answer added! Total answers:", len(answers))
-            _ = self.client.beta.threads.messages.create(
-                thread.id,
-                role="user",
-                content=f"Answer the question {question}. The output should be just an answer and nothing else.",
-            )
-            # triggering the next run to add a new answer
-            run = self.trigger_run(thread.id, self.answerer_assistant.id)
+        answers = self.update_list(
+            run, self.client, thread.id, answers
+        )  # to update the last answer after the loop ends
 
         # deleting the answerer assistant
         deletion_status = self.client.beta.assistants.delete(
@@ -61,5 +56,6 @@ class Answerer(BaseAssistant):
         )
 
         save_dataset(answers, os.path.join(self.output_path, "answers.jsonl"))
+        print("Answers generated and saved to answers.jsonl\n")
 
         return answers, deletion_status
