@@ -5,8 +5,8 @@ from tqdm import tqdm
 
 
 class Answerer(BaseAssistant):
-    def __init__(self, resources_path, output_path, model):
-        super().__init__(resources_path, output_path, model)
+    def __init__(self, resources_path, output_path, local_url, model):
+        super().__init__(resources_path, output_path, local_url, model)
         self.answerer_assistant = self.client.beta.assistants.create(
             name="Answerer",
             instructions="You are an Answerer. Your job is to refer to the provided resources and answer the input question. You can use the retrieval to help you with this task. The response provided should be an answer. DO NOT ADD QUESTIONS IN THE RESPONSE. Only provide the answer to the given question. For ex. If 'What is the capital of Spain?' is the input question then 'The capital of Spain is Madrid' should be the output.",
