@@ -7,12 +7,10 @@ import time
 class BaseAssistant:
     file_ids = None
 
-    def __init__(self, resources_path, output_path, local_url, model):
+    def __init__(self, resources_path, output_path, model):
         self.resources_path = resources_path
         self.output_path = output_path
-        self.client = (
-            openai.Client() if not local_url else openai.Client(base_url=local_url)
-        )
+        self.client = openai.Client()
         self.model = model
         if BaseAssistant.file_ids is None:
             BaseAssistant.file_ids = self.get_file_ids(self.resources_path)
