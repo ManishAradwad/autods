@@ -8,15 +8,26 @@ import os
 
 
 class Manager(BaseAssistant):
-    def __init__(self, resources_path, output_path, prompt, model="gpt-3.5-turbo-1106"):
-        super().__init__(resources_path, output_path, model)
+    def __init__(
+        self,
+        resources_path,
+        output_path,
+        prompt,
+        local_url=None,
+        model="gpt-3.5-turbo-1106",
+    ):
+        super().__init__(resources_path, output_path, local_url, model)
         # in future can provide functionaluty to let user decide the model specific to both q and a
-        self.questioner = Questioner(self.resources_path, self.output_path, self.model)
-        self.answerer = Answerer(self.resources_path, self.output_path, self.model)
+        self.questioner = Questioner(
+            self.resources_path, self.output_path, local_url, self.model
+        )
+        self.answerer = Answerer(
+            self.resources_path, self.output_path, local_url, self.model
+        )
         self.topic = self.extract_topic(prompt)
-        self.validater_assistant = self.client.beta.assistants.create(
+        self.validator_assistant = self.client.beta.assistants.create(
             name="Manager",
-            instructions=f'You are a Manager who oversees the creation of a dataset based on the {self.topic}. You are given a question-answer pair. Your job is to refer to the input resources and verify whether the answer is correct for the correspoding question. You can use the retrieval to help you with this task. The response provided should be either "Valid" or "Invalid". The value should be "Valid" if the provided `answer` answers the given `question` and "Invalid" if it does not. For instance, if the input question is \'What is the capital of France?\' and the answer is \'Paris\', the response should be "Valid". If the input question is \'What is the capital of France?\' and the answer is \'Spain\', the response should be "Invalid". ADD "VALID" OR "INVALID" WORD IN THE RESPONSE.',
+            instructions=f'You are a Manager who oversees the creation of a dataset based on the {self.topic}. You are given a question-answer pair. Your job is to refer to the input resources and verify whether the answer is correct for the correspoding question. You can use the retrieval to help you with this task. The response provided should be either "Valid" or "Invalid". The value should be "Valid" if the provided `answer` answers the given `question` and "Invalid" if it does not. For instance, if the input question is \'What is the capital of France?\' and the answer is \'Paris\', the response should be "Valid". If the input question is \'What is the capital of France?\' and the answer is \'Spain\', the response should be "Invalid". ADD "VALID" OR "INVALID" WORD IN THE RESPONSE. IF THE ANSWER MENTIONS SOMETHING LIKE `I could not find answer specific to the question in the provided documents`, THEN THE RESPONSE SHOULD BE "INVALID".',
             tools=[{"type": "retrieval"}],
             model=self.model,
             file_ids=BaseAssistant.file_ids,
@@ -58,7 +69,6 @@ class Manager(BaseAssistant):
         return type_ds
 
     def validate(self, run, thread_id, lst):
-
         # checking if the current run to add a question has completed
         while run.status != "completed":
             run = self.client.beta.threads.runs.retrieve(
@@ -97,7 +107,7 @@ class Manager(BaseAssistant):
                     ]
                 )
                 # triggering the first run
-                run = self.trigger_run(thread.id, self.validater_assistant.id)
+                run = self.trigger_run(thread.id, self.validator_assistant.id)
             else:
                 result = self.validate(run, thread.id, result)
                 # logging
@@ -108,19 +118,19 @@ class Manager(BaseAssistant):
                     content=f"Please verify this next question-answer pair:\nQuestion-{question}\nAnswer-{answer}",
                 )
                 # triggering the next run to add a new question
-                run = self.trigger_run(thread.id, self.validater_assistant.id)
+                run = self.trigger_run(thread.id, self.validator_assistant.id)
 
         result = self.validate(
             run, thread.id, result
         )  # to update the last answer after the loop ends
 
         # deleting the questioner assistant
-        _ = self.client.beta.assistants.delete(assistant_id=self.validater_assistant.id)
+        _ = self.client.beta.assistants.delete(assistant_id=self.validator_assistant.id)
 
         validated_questions = [q for q, r in zip(questions, result) if r == 1]
         validated_answers = [a for a, r in zip(answers, result) if r == 1]
 
-        save_dataset(answers, os.path.join(self.output_path, "validation_result.jsonl"))
+        save_dataset(result, os.path.join(self.output_path, "validation_result.jsonl"))
         print("Answers validated and the results saved to validation_result.jsonl\n")
 
         # deleting the files

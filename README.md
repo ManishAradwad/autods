@@ -50,14 +50,15 @@ This project is licensed under the MIT License.
 
 ## TODO:
 
-More Important:
+high priority:
 
-- [ ] Improve the validator reply prompt
-- [ ] Validater responses are based on a very loose rule of “if ‘valid’ in response then append 1 else 0”. Try fixing that(not sure how to do this.) 
-
-Less Important:
-
+- [ ] Improve the validator reply prompt. Validator responses are based on a very loose rule of “if ‘valid’ in response then append 1 else 0”. Try fixing that(not sure how to do this.) 
 - [ ] Add the open source model support along with GPT
+    - [ ] May need llama-index since it seems its mainly for RAG. llamaindex seems like an OSS alternative to how openai uses RAG in their api. So LocalAI may need llama-index
+
+low priority:
+
 - [ ] Use function calling for formatting the model responses
 - [ ] Add an example for dataset format
 - [ ] Add the ability to generate QnA based on images as well by adding vision tool
+- [ ] Sometimes answers contain the prompt used for getting the response. Maybe related to the model. 
