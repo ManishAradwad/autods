@@ -5,8 +5,8 @@ from tqdm import tqdm
 
 
 class Questioner(BaseAssistant):
-    def __init__(self, resources_path, output_path, local_url, model):
-        super().__init__(resources_path, output_path, local_url, model)
+    def __init__(self, resources_path, output_path, model):
+        super().__init__(resources_path, output_path, model)
         self.questioner_assistant = self.client.beta.assistants.create(
             name="Questioner",
             instructions="You are a Questioner. Your job is to refer to the resources provided and create questions to be added in the dataset. You can use the retrieval to help you with this task. The response provided should be a list of questions.",
