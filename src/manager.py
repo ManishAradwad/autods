@@ -25,13 +25,16 @@ class Manager(BaseAssistant):
             self.resources_path, self.output_path, local_url, self.model
         )
         self.topic = self.extract_topic(prompt)
-        self.validator_assistant = self.client.beta.assistants.create(
-            name="Manager",
-            instructions=f'You are a Manager who oversees the creation of a dataset based on the {self.topic}. You are given a question-answer pair. Your job is to refer to the input resources and verify whether the answer is correct for the correspoding question. You can use the retrieval to help you with this task. The response provided should be either "Valid" or "Invalid". The value should be "Valid" if the provided `answer` answers the given `question` and "Invalid" if it does not. For instance, if the input question is \'What is the capital of France?\' and the answer is \'Paris\', the response should be "Valid". If the input question is \'What is the capital of France?\' and the answer is \'Spain\', the response should be "Invalid". ADD "VALID" OR "INVALID" WORD IN THE RESPONSE. IF THE ANSWER MENTIONS SOMETHING LIKE `I could not find answer specific to the question in the provided documents`, THEN THE RESPONSE SHOULD BE "INVALID".',
-            tools=[{"type": "retrieval"}],
-            model=self.model,
-            file_ids=BaseAssistant.file_ids,
-        )
+        if self.local_url:
+            self.validator_assistant = None
+        else:
+            self.validator_assistant = self.client.beta.assistants.create(
+                name="Manager",
+                instructions=f'You are a Manager who oversees the creation of a dataset based on the {self.topic}. You are given a question-answer pair. Your job is to refer to the input resources and verify whether the answer is correct for the correspoding question. You can use the retrieval to help you with this task. The response provided should be either "Valid" or "Invalid". The value should be "Valid" if the provided `answer` answers the given `question` and "Invalid" if it does not. For instance, if the input question is \'What is the capital of France?\' and the answer is \'Paris\', the response should be "Valid". If the input question is \'What is the capital of France?\' and the answer is \'Spain\', the response should be "Invalid". ADD "VALID" OR "INVALID" WORD IN THE RESPONSE. IF THE ANSWER MENTIONS SOMETHING LIKE `I could not find answer specific to the question in the provided documents`, THEN THE RESPONSE SHOULD BE "INVALID".',
+                tools=[{"type": "retrieval"}],
+                model=self.model,
+                file_ids=BaseAssistant.file_ids,
+            )
 
     def extract_topic(self, prompt):
         completion = self.client.chat.completions.create(
@@ -48,8 +51,7 @@ class Manager(BaseAssistant):
             ],
         )
 
-        topic = completion.choices[0].message
-        return topic.content
+        return completion.choices[0].message.content
 
     def generate_dataset(self, type_ds="train.jsonl", count=1, multiplier=5):
         if not os.path.exists(self.output_path):
@@ -96,36 +98,58 @@ class Manager(BaseAssistant):
         result = []
 
         print("Validating questions...")
-        for question, answer in tqdm(zip(questions, answers), total=len(questions)):
-            if not thread:
-                thread = self.client.beta.threads.create(
+        if self.validator_assistant is None:
+            for question, answer in tqdm(zip(questions, answers), total=len(questions)):
+                response = self.client.chat.completions.create(
+                    model=self.model,
                     messages=[
+                        {
+                            "role": "system",
+                            "content": "You are a Validator. Your job is to refer to the input resources and verify whether the answer is correct for the correspoding question. You can use the retrieval to help you with this task. The response provided should be either 'Valid' or 'Invalid'. The value should be 'Valid' if the provided `answer` answers the given `question` and 'Invalid' if it does not. For instance, if the input question is 'What is the capital of France?' and the answer is 'Paris', the response should be 'Valid'. If the input question is 'What is the capital of France?' and the answer is 'Spain', the response should be 'Invalid'. ADD 'VALID' OR 'INVALID' WORD IN THE RESPONSE. IF THE ANSWER MENTIONS SOMETHING LIKE `I could not find answer specific to the question in the provided documents`, THEN THE RESPONSE SHOULD BE 'INVALID'.",
+                        },
                         {
                             "role": "user",
                             "content": f"I want to validate this question-answer pair: Question-{question}\nAnswer-{answer}.",
-                        }
-                    ]
+                        },
+                    ],
                 )
-                # triggering the first run
-                run = self.trigger_run(thread.id, self.validator_assistant.id)
-            else:
-                result = self.validate(run, thread.id, result)
-                # logging
-                # print("New question verified! Total verified:", len(questions))
-                _ = self.client.beta.threads.messages.create(
-                    thread.id,
-                    role="user",
-                    content=f"Please verify this next question-answer pair:\nQuestion-{question}\nAnswer-{answer}",
-                )
-                # triggering the next run to add a new question
-                run = self.trigger_run(thread.id, self.validator_assistant.id)
+                if "invalid" in response.choices[0].message.content.lower():
+                    result.append(0)
+                else:
+                    result.append(1)
+        else:
+            for question, answer in tqdm(zip(questions, answers), total=len(questions)):
+                if not thread:
+                    thread = self.client.beta.threads.create(
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": f"I want to validate this question-answer pair: Question-{question}\nAnswer-{answer}.",
+                            }
+                        ]
+                    )
+                    # triggering the first run
+                    run = self.trigger_run(thread.id, self.validator_assistant.id)
+                else:
+                    result = self.validate(run, thread.id, result)
+                    # logging
+                    # print("New question verified! Total verified:", len(questions))
+                    _ = self.client.beta.threads.messages.create(
+                        thread.id,
+                        role="user",
+                        content=f"Please verify this next question-answer pair:\nQuestion-{question}\nAnswer-{answer}",
+                    )
+                    # triggering the next run to add a new question
+                    run = self.trigger_run(thread.id, self.validator_assistant.id)
 
-        result = self.validate(
-            run, thread.id, result
-        )  # to update the last answer after the loop ends
+            result = self.validate(
+                run, thread.id, result
+            )  # to update the last answer after the loop ends
 
-        # deleting the questioner assistant
-        _ = self.client.beta.assistants.delete(assistant_id=self.validator_assistant.id)
+            # deleting the questioner assistant
+            _ = self.client.beta.assistants.delete(
+                assistant_id=self.validator_assistant.id
+            )
 
         validated_questions = [q for q, r in zip(questions, result) if r == 1]
         validated_answers = [a for a, r in zip(answers, result) if r == 1]

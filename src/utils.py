@@ -10,11 +10,12 @@ class BaseAssistant:
     def __init__(self, resources_path, output_path, local_url, model):
         self.resources_path = resources_path
         self.output_path = output_path
+        self.local_url = local_url
         self.client = (
-            openai.Client() if not local_url else openai.Client(base_url=local_url)
+            openai.Client() if not local_url else openai.Client(base_url=self.local_url)
         )
         self.model = model
-        if BaseAssistant.file_ids is None:
+        if BaseAssistant.file_ids is None and self.local_url is None:
             BaseAssistant.file_ids = self.get_file_ids(self.resources_path)
 
     def update_list(self, run, client, thread_id, lst):
